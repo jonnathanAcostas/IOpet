@@ -217,17 +217,38 @@ def completar_horario_api(schedule_id):
 # =========================
 def verificar_horarios_api():
     global ultimos_horarios_procesados
-    hora_actual = obtener_hora()
+    
+    # 1. Obtener fecha/hora actual en UTC
+    fecha_utc = rtc.datetime()
+    year, month, day, _, hour_utc, minute_utc, _, _ = fecha_utc
+    current_utc_iso = "{:04d}-{:02d}-{:02d}T{:02d}:{:02d}".format(year, month, day, hour_utc, minute_utc)
+    
+    # 2. Obtener hora actual local (Ecuador)
+    hora_local_ecuador = obtener_hora()
+    
     horarios = obtener_horarios_api()
 
     for horario in horarios:
-        hora_programada = horario.get("scheduledTime", "")
+        scheduled_time = horario.get("scheduledTime", "")
         schedule_id = horario.get("id", "")
 
-        if hora_programada == hora_actual:
+        se_debe_activar = False
+        
+        if "T" in scheduled_time:
+            # Formato ISO (e.g. 2026-06-05T13:30:00.000Z)
+            # Comparamos los primeros 16 caracteres (Año-Mes-DiaTHora:Minuto) en UTC
+            if scheduled_time[:16] == current_utc_iso:
+                se_debe_activar = True
+        else:
+            # Formato simple HH:MM (e.g. 08:30)
+            if scheduled_time == hora_local_ecuador:
+                se_debe_activar = True
+
+        if se_debe_activar:
             if schedule_id not in ultimos_horarios_procesados:
                 ultimos_horarios_procesados.append(schedule_id)
-                activar_dispensador("API HORARIO " + hora_actual)
+                print("¡HORARIO PROGRAMADO COINCIDE!", scheduled_time)
+                activar_dispensador("API HORARIO " + scheduled_time)
                 completar_horario_api(schedule_id)
 
                 if len(ultimos_horarios_procesados) > 50:

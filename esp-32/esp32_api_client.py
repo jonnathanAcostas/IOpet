@@ -17,7 +17,7 @@ from machine import Pin, RTC
 # CONFIGURACION BACKEND
 # =========================
 # CAMBIA ESTA IP por la IP del servidor donde corre el backend Express
-BACKEND_IP = "10.118.116.9"
+BACKEND_IP = "192.168.1.10"
 BACKEND_PORT = 4000
 BACKEND_URL = "http://{}:{}/api/v1/feeder".format(BACKEND_IP, BACKEND_PORT)
 POLL_INTERVAL = 30  # segundos entre consultas de horarios
@@ -48,8 +48,8 @@ def registrar_ip_en_backend(esp32_ip):
 # =========================
 # WIFI
 # =========================
-ssid = "Pixel 9 FEMS"
-password = "12345678"
+ssid = "CELERITY_SMOKE"
+password = "1725Smoke@"
 
 print("Conectando a WiFi:", ssid)
 
@@ -313,3 +313,4 @@ while True:
         pass
 
     time.sleep(0.05)
+

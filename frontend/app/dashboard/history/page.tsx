@@ -109,6 +109,7 @@ export default function HistoryPage() {
         petId: schedule.petId,
         portionSize: schedule.portionSize,
         foodType: schedule.foodType,
+        scheduleId: schedule.id,
       });
       if (res.success) {
         alert(`✅ Comida servida correctamente para ${schedule.petName || petMap.get(schedule.petId) || 'la mascota'}`);

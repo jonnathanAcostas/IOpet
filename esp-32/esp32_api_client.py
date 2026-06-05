@@ -96,7 +96,7 @@ except:
 # PINES
 # =========================
 pulsador = Pin(4, Pin.IN, Pin.PULL_DOWN)
-servo_pin = Pin(13, Pin.OUT)
+servo_pin = Pin(15, Pin.OUT)
 dispensador = PWM(servo_pin, freq=50)
 
 # =========================
@@ -328,4 +328,5 @@ while True:
         pass
 
     time.sleep(0.05)
+
 

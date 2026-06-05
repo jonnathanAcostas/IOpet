@@ -79,7 +79,7 @@ export const getFeederStatus = asyncWrapper(async (_req: Request, res: Response)
 });
 
 export const feedNow = asyncWrapper(async (req: Request, res: Response) => {
-  const { petId, portionSize, foodType } = req.body;
+  const { petId, portionSize, foodType, scheduleId } = req.body;
 
   if (!petId) {
     sendError(res, 400, 'VALIDATION_ERROR', 'petId is required');
@@ -101,21 +101,31 @@ export const feedNow = asyncWrapper(async (req: Request, res: Response) => {
     return;
   }
 
-  const schedule = await feedingScheduleService.create({
-    petId,
-    portionSize: portionSize || '100g',
-    foodType: foodType || 'Croquetas',
-    scheduledTime: new Date().toISOString(),
-    distributionType: 'manual',
-  });
+  let finalScheduleId: string;
+  if (scheduleId) {
+    await feedingScheduleService.update(scheduleId, {
+      status: 'completed',
+      completedTime: new Date().toISOString(),
+    });
+    finalScheduleId = scheduleId;
+  } else {
+    const schedule = await feedingScheduleService.create({
+      petId,
+      portionSize: portionSize || '100g',
+      foodType: foodType || 'Croquetas',
+      scheduledTime: new Date().toISOString(),
+      distributionType: 'manual',
+    });
 
-  await feedingScheduleService.update(schedule.id!, {
-    status: 'completed',
-    completedTime: new Date().toISOString(),
-  });
+    await feedingScheduleService.update(schedule.id!, {
+      status: 'completed',
+      completedTime: new Date().toISOString(),
+    });
+    finalScheduleId = schedule.id!;
+  }
 
   logger.info(`Manual feeding completed`, { petId: pet.id, name: pet.name });
-  sendCreated(res, { pet: { id: pet.id, name: pet.name }, feedingId: schedule.id }, 'Comida servida correctamente');
+  sendCreated(res, { pet: { id: pet.id, name: pet.name }, feedingId: finalScheduleId }, 'Comida servida correctamente');
 });
 
 export const scheduleFeeding = asyncWrapper(async (req: Request, res: Response) => {

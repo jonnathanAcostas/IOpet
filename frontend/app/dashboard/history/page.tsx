@@ -11,6 +11,7 @@ import { usePets } from '@/hooks/usePets';
 import { useMobile } from '@/hooks/useMobile';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { FeedingSchedule, DistributionType } from '@/interfaces/feedingSchedule';
+import { api } from '@/services/api';
 
 function formatDate(iso: string, compact?: boolean): string {
   const d = new Date(iso);
@@ -68,6 +69,7 @@ export default function HistoryPage() {
 
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [servingId, setServingId] = useState<string | null>(null);
 
   const petMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -96,6 +98,28 @@ export default function HistoryPage() {
     const result = await createSchedule(data);
     if (result) {
       await refetch();
+    }
+  };
+
+  const handleDispense = async (schedule: FeedingSchedule) => {
+    if (!schedule.id) return;
+    setServingId(schedule.id);
+    try {
+      const res = await api.post('/feeder/feed-now', {
+        petId: schedule.petId,
+        portionSize: schedule.portionSize,
+        foodType: schedule.foodType,
+      });
+      if (res.success) {
+        alert(`✅ Comida servida correctamente para ${schedule.petName || petMap.get(schedule.petId) || 'la mascota'}`);
+        await refetch();
+      } else {
+        alert(`❌ Error al servir: ${res.message || 'Comedero no disponible'}`);
+      }
+    } catch (err) {
+      alert(`❌ Error de conexión: ${err instanceof Error ? err.message : 'Error desconocido'}`);
+    } finally {
+      setServingId(null);
     }
   };
 
@@ -159,6 +183,7 @@ export default function HistoryPage() {
                   <th className={m('history-th')} data-label="Completed">{t('history.table.completed')}</th>
                   <th className={m('history-th')} data-label="Type">{t('history.table.type')}</th>
                   <th className={m('history-th')} data-label="Status">{t('history.table.status')}</th>
+                  <th className={m('history-th')} data-label="Action">Acción</th>
                 </tr>
               </thead>
               <tbody>
@@ -191,6 +216,28 @@ export default function HistoryPage() {
                         <span className={`status-icon ${schedule.status}`}>{statusIcon[schedule.status]}</span>
                       ) : (
                         <StatusBadge status={schedule.status} />
+                      )}
+                    </td>
+                    <td className={m('history-td')} data-label="⚙️">
+                      {schedule.distributionType === 'manual' ? (
+                        <button
+                          className="btn btn--primary btn--sm"
+                          disabled={servingId === schedule.id}
+                          onClick={() => handleDispense(schedule)}
+                          style={{
+                            padding: '4px 10px',
+                            fontSize: '0.75rem',
+                            minHeight: 'auto',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            borderRadius: 'var(--radius-sm)'
+                          }}
+                        >
+                          {servingId === schedule.id ? '⏳ Serviendo...' : '🍲 Servir'}
+                        </button>
+                      ) : (
+                        '—'
                       )}
                     </td>
                   </tr>

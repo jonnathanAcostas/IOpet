@@ -11,7 +11,7 @@ import ntptime
 import urequests
 import ujson
 
-from machine import Pin, RTC
+from machine import Pin, RTC, PWM
 
 # =========================
 # CONFIGURACION BACKEND
@@ -96,7 +96,22 @@ except:
 # PINES
 # =========================
 pulsador = Pin(4, Pin.IN, Pin.PULL_DOWN)
-dispensador = Pin(21, Pin.OUT)
+servo_pin = Pin(13, Pin.OUT)
+dispensador = PWM(servo_pin, freq=50)
+
+# =========================
+# MOVER SERVO
+# =========================
+def mover_servo(angulo):
+    # Traducir el angulo (0 a 180) al ancho de pulso en nanosegundos (duty_ns)
+    # 500 us (minimo, 500,000 ns) a 2400 us (maximo, 2,400,000 ns)
+    min_pulse_ns = 500000
+    max_pulse_ns = 2400000
+    pulse_ns = int(min_pulse_ns + (angulo / 180.0) * (max_pulse_ns - min_pulse_ns))
+    dispensador.duty_ns(pulse_ns)
+
+# Inicializar en 0 grados
+mover_servo(0)
 
 # =========================
 # VARIABLES
@@ -155,9 +170,9 @@ def activar_dispensador(origen="MANUAL"):
     estado = "SIRVIENDO COMIDA"
     print("ACTIVADO DESDE:", origen)
 
-    dispensador.value(1)
+    mover_servo(90)
     time.sleep(5)
-    dispensador.value(0)
+    mover_servo(0)
 
     estado = "COMIDA SERVIDA"
     print("COMIDA SERVIDA")

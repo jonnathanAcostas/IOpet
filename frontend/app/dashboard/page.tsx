@@ -7,6 +7,7 @@ import { usePets } from '@/hooks/usePets';
 import { useFeedingHistory } from '@/hooks/useFeedingHistory';
 import { useMobile } from '@/hooks/useMobile';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useFeederStatus } from '@/hooks/useFeederStatus';
 
 function ChevronDown() {
   return (
@@ -28,6 +29,7 @@ function ArrowRight() {
 export default function DashboardPage() {
   const { data: pets } = usePets();
   const { data: schedules } = useFeedingHistory();
+  const { online: feederOnline, ip: feederIp, loading: feederLoading } = useFeederStatus();
   const isMobile = useMobile();
   const { t } = useTranslation();
 
@@ -44,7 +46,19 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="dashboard-header">
           <div className="dashboard-header-left">
-            <h1>{t('dashboard.title')}</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <h1>{t('dashboard.title')}</h1>
+              <div className={`feeder-status-badge ${feederLoading ? 'loading' : feederOnline ? 'online' : 'offline'}`}>
+                <span className="feeder-status-dot" />
+                <span>
+                  {feederLoading
+                    ? 'Verificando comedero...'
+                    : feederOnline
+                    ? `Comedero En Línea (${feederIp})`
+                    : 'Comedero Desconectado'}
+                </span>
+              </div>
+            </div>
             <p>{t('dashboard.welcome')}</p>
           </div>
           {/* 

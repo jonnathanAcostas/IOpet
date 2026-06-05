@@ -91,7 +91,7 @@ export function CreateDistributionModal({ isOpen, pets, onClose, onSubmit }: Cre
         petId,
         portionSize: portionSize.trim(),
         foodType: foodType.trim(),
-        scheduledTime: new Date(`${scheduledDate}T${scheduledTime}`).toISOString(),
+        scheduledTime: `${scheduledDate} ${scheduledTime}`,
         distributionType,
         notes: notes.trim() || undefined,
       });

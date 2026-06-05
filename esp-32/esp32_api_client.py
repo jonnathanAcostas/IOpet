@@ -20,7 +20,7 @@ from machine import Pin, RTC, PWM
 BACKEND_IP = "192.168.1.10"
 BACKEND_PORT = 4000
 BACKEND_URL = "http://{}:{}/api/v1/feeder".format(BACKEND_IP, BACKEND_PORT)
-POLL_INTERVAL = 30  # segundos entre consultas de horarios
+POLL_INTERVAL = 10  # segundos entre consultas de horarios
 
 # =========================
 # REGISTRO DE IP EN BACKEND
@@ -147,20 +147,23 @@ def probar_conexion_backend():
 # =========================
 # OBTENER HORA ECUADOR
 # =========================
+def obtener_fecha_hora_local():
+    local_epoch = time.time() - 18000
+    local_time = time.localtime(local_epoch)
+    year = local_time[0]
+    month = local_time[1]
+    day = local_time[2]
+    hour = local_time[3]
+    minuto = local_time[4]
+    
+    return "{:04d}-{:02d}-{:02d} {:02d}:{:02d}".format(year, month, day, hour, minuto)
+
 def obtener_hora():
-    fecha = rtc.datetime()
-    hora = fecha[4]
-    minuto = fecha[5]
-
-    # ECUADOR UTC -5
-    hora = hora - 5
-    if hora < 0:
-        hora += 24
-
-    hora = "0" + str(hora) if hora < 10 else str(hora)
-    minuto = "0" + str(minuto) if minuto < 10 else str(minuto)
-
-    return hora + ":" + minuto
+    local_epoch = time.time() - 18000
+    local_time = time.localtime(local_epoch)
+    hour = local_time[3]
+    minuto = local_time[4]
+    return "{:02d}:{:02d}".format(hour, minuto)
 
 # =========================
 # ACTIVAR DISPENSADOR
@@ -218,15 +221,19 @@ def completar_horario_api(schedule_id):
 def verificar_horarios_api():
     global ultimos_horarios_procesados
     
-    # 1. Obtener fecha/hora actual en UTC
+    # 1. Obtener fecha/hora local (Ecuador)
+    fecha_hora_local = obtener_fecha_hora_local()
+    print("[LOG] Hora actual (Ecuador):", fecha_hora_local)
+    
+    # 2. Obtener fecha/hora en UTC (para retrocompatibilidad con formato ISO)
     fecha_utc = rtc.datetime()
     year, month, day, _, hour_utc, minute_utc, _, _ = fecha_utc
     current_utc_iso = "{:04d}-{:02d}-{:02d}T{:02d}:{:02d}".format(year, month, day, hour_utc, minute_utc)
     
-    # 2. Obtener hora actual local (Ecuador)
-    hora_local_ecuador = obtener_hora()
-    
     horarios = obtener_horarios_api()
+    # Log de horarios recibidos para debuggear en uPyCraft
+    lista_horarios = [h.get("scheduledTime", "") for h in horarios]
+    print("[LOG] Horarios recibidos del backend:", lista_horarios)
 
     for horario in horarios:
         scheduled_time = horario.get("scheduledTime", "")
@@ -235,19 +242,23 @@ def verificar_horarios_api():
         se_debe_activar = False
         
         if "T" in scheduled_time:
-            # Formato ISO (e.g. 2026-06-05T13:30:00.000Z)
-            # Comparamos los primeros 16 caracteres (Año-Mes-DiaTHora:Minuto) en UTC
+            # Formato ISO en UTC (retrocompatibilidad)
             if scheduled_time[:16] == current_utc_iso:
                 se_debe_activar = True
+        elif " " in scheduled_time:
+            # Nuevo formato local "YYYY-MM-DD HH:MM"
+            if scheduled_time[:16] == fecha_hora_local:
+                se_debe_activar = True
         else:
-            # Formato simple HH:MM (e.g. 08:30)
-            if scheduled_time == hora_local_ecuador:
+            # Formato antiguo "HH:MM"
+            hora_local = obtener_hora()
+            if scheduled_time == hora_local:
                 se_debe_activar = True
 
         if se_debe_activar:
             if schedule_id not in ultimos_horarios_procesados:
                 ultimos_horarios_procesados.append(schedule_id)
-                print("¡HORARIO PROGRAMADO COINCIDE!", scheduled_time)
+                print("[ALERTA] ¡HORARIO COINCIDE! Activando dispensador...")
                 activar_dispensador("API HORARIO " + scheduled_time)
                 completar_horario_api(schedule_id)
 
@@ -296,6 +307,7 @@ while True:
     # =========================
     if time.time() - ultimo_poll >= POLL_INTERVAL:
         ultimo_poll = time.time()
+        print("[LOG] Consultando horarios al backend (cada 10s)...")
         verificar_horarios_api()
 
     # =========================

@@ -10,28 +10,41 @@ interface UseFetchResult<T> {
   refetch: () => void;
 }
 
+interface UseFetchOptions {
+  refreshInterval?: number;
+}
+
 export function useFetch<T>(
   fetcher: () => Promise<ApiResponse<T>>,
-  deps: unknown[] = []
+  deps: unknown[] = [],
+  options?: UseFetchOptions
 ): UseFetchResult<T> {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
+  const fetchData = useCallback(async (isSilent = false) => {
+    if (!isSilent) {
+      setLoading(true);
+    }
     setError(null);
     try {
       const response = await fetcher();
       if (response.success && response.data !== undefined) {
         setData(response.data);
       } else {
-        setError(response.message || 'Unknown error');
+        if (!isSilent) {
+          setError(response.message || 'Unknown error');
+        }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      if (!isSilent) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      }
     } finally {
-      setLoading(false);
+      if (!isSilent) {
+        setLoading(false);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
@@ -40,5 +53,14 @@ export function useFetch<T>(
     fetchData();
   }, [fetchData]);
 
-  return { data, loading, error, refetch: fetchData };
+  useEffect(() => {
+    if (options?.refreshInterval) {
+      const interval = setInterval(() => {
+        fetchData(true);
+      }, options.refreshInterval);
+      return () => clearInterval(interval);
+    }
+  }, [fetchData, options?.refreshInterval]);
+
+  return { data, loading, error, refetch: () => fetchData(false) };
 }

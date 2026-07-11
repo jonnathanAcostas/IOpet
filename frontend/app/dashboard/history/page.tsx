@@ -38,7 +38,7 @@ const statusIcon: Record<FeedingSchedule['status'], string> = {
   missed: '❌',
 };
 
-const speciesEmoji: Record<string, string> = { dog:'🐶', cat:'🐱', bird:'🐦', fish:'🐟', other:'🐾' };
+const speciesEmoji: Record<string, string> = { dog: '🐶', cat: '🐱', bird: '🐦', fish: '🐟', other: '🐾' };
 
 const statusTranslations: Record<FeedingSchedule['status'], string> = {
   completed: 'Completada',

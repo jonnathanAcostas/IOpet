@@ -9,5 +9,5 @@ export function useFeedingHistory(petId?: string) {
     ? () => api.get<FeedingSchedule[]>(endpoints.feedingSchedulesByPet(petId))
     : () => api.get<FeedingSchedule[]>(endpoints.feedingSchedules);
 
-  return useFetch<FeedingSchedule[]>(fetcher, [petId]);
+  return useFetch<FeedingSchedule[]>(fetcher, [petId], { refreshInterval: 10000 });
 }

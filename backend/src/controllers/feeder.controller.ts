@@ -10,7 +10,7 @@ import { enrichSchedulesWithPets } from '../utils/enrichSchedules';
 
 const petService = new PetService();
 const feedingScheduleService = new FeedingScheduleService();
-let activeEsp32Ip: string = process.env.ESP32_IP || '192.168.4.1';
+let activeEsp32Ip: string = process.env.ESP32_IP || '10.81.132.27';
 
 function getESP32IP(): string {
   return activeEsp32Ip;
@@ -36,12 +36,12 @@ async function esp32Get(path: string): Promise<{ ok: boolean; data?: string }> {
     console.log(`Attempting to reach ESP32 at http://${getESP32IP()}${path}...`);
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), 5000);
-    
+
     const response = await fetch(`http://${getESP32IP()}${path}`, {
       signal: controller.signal
     });
     clearTimeout(id);
-    
+
     const text = await response.text();
     return { ok: response.status === 200, data: text };
   } catch (err) {
@@ -54,12 +54,12 @@ async function esp32GetLong(path: string): Promise<{ ok: boolean; data?: string 
   try {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), 15000);
-    
+
     const response = await fetch(`http://${getESP32IP()}${path}`, {
       signal: controller.signal
     });
     clearTimeout(id);
-    
+
     const text = await response.text();
     return { ok: response.status === 200, data: text };
   } catch (err) {

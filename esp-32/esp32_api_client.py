@@ -17,7 +17,7 @@ from machine import Pin, RTC, PWM
 # CONFIGURACION BACKEND
 # =========================
 # CAMBIA ESTA IP por la IP del servidor donde corre el backend Express
-BACKEND_IP = "192.168.1.10"
+BACKEND_IP = "192.168.1.34"
 BACKEND_PORT = 4000
 BACKEND_URL = "http://{}:{}/api/v1/feeder".format(BACKEND_IP, BACKEND_PORT)
 POLL_INTERVAL = 10  # segundos entre consultas de horarios
@@ -48,8 +48,8 @@ def registrar_ip_en_backend(esp32_ip):
 # =========================
 # WIFI
 # =========================
-ssid = "CELERITY_SMOKE"
-password = "1725Smoke@"
+ssid = "Smokefcc"
+password = "Smokefcc"
 
 print("Conectando a WiFi:", ssid)
 
@@ -174,7 +174,7 @@ def activar_dispensador(origen="MANUAL"):
     print("ACTIVADO DESDE:", origen)
 
     mover_servo(90)
-    time.sleep(5)
+    time.sleep(2)
     mover_servo(0)
 
     estado = "COMIDA SERVIDA"
@@ -258,7 +258,7 @@ def verificar_horarios_api():
         if se_debe_activar:
             if schedule_id not in ultimos_horarios_procesados:
                 ultimos_horarios_procesados.append(schedule_id)
-                print("[ALERTA] ¡HORARIO COINCIDE! Activando dispensador...")
+                print("[ALERTA] 闅咹ORARIO COINCIDE! Activando dispensador...")
                 activar_dispensador("API HORARIO " + scheduled_time)
                 completar_horario_api(schedule_id)
 
@@ -361,3 +361,6 @@ while True:
         pass
 
     time.sleep(0.05)
+
+
+
